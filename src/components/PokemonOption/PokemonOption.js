@@ -4,25 +4,38 @@ import CustomText from "../CustomText";
 
 import { Entypo } from "@expo/vector-icons";
 
-// todo: import Redux packages
+import { connect } from "react-redux";
 
-// todo: import actions
+import { selectPokemon, setPokemon, setMove } from "../../actions";
 
-const PokemonOption = ({ pokemon_data, is_selected, action_type }) => {
+const PokemonOption = ({
+  pokemon_data,
+  is_selected,
+  action_type,
+  togglePokemon,
+  setPokemon,
+  backToMove
+  // todo: extract opponents channel from props
+}) => {
   let compact = action_type == "select-pokemon" ? false : true;
   let marginTop = compact ? {} : { marginTop: 20 };
   let imageStyle = compact ? { width: 40 } : { width: 60 };
 
-  const { label, sprite } = pokemon_data; // todo: extract id
+  const { id, label, sprite } = pokemon_data;
 
   return (
     <TouchableOpacity
       onPress={() => {
         if (action_type == "select-pokemon") {
-          // todo: dispatch action for adding clicked Pokemon to the team
+          togglePokemon(id, pokemon_data, is_selected);
         } else if (action_type == "switch-pokemon") {
-          // todo: dispatch action for setting message for message box
-          // todo: dispatch action for setting current Pokemon
+          setPokemon(pokemon_data);
+
+          // todo: emit event to inform opponent that they've switched Pokemon
+
+          backToMove();
+
+          // todo: dispatch action for setting user to wait for their turn
         }
       }}
     >
@@ -45,11 +58,29 @@ const styles = {
     justifyContent: "space-around",
     flexDirection: "row"
   },
+  label: {
+    fontSize: 14
+  },
   text: {
     width: 100
   }
 };
 
-// todo: add mapDispatchToProps (backToMove, togglePokemon, setPokemon, setMessage, setMove)
+const mapDispatchToProps = dispatch => {
+  return {
+    backToMove: () => {
+      dispatch(setMove("select-move"));
+    },
+    togglePokemon: (id, pokemon_data, is_selected) => {
+      dispatch(selectPokemon(id, pokemon_data, is_selected));
+    },
+    setPokemon: pokemon => {
+      dispatch(setPokemon(pokemon));
+    }
+  };
+};
 
-export default PokemonOption; // todo: convert component into a connected component
+export default connect(
+  null,
+  mapDispatchToProps
+)(PokemonOption);

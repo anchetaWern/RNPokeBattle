@@ -2,20 +2,22 @@ import React from "react";
 import { TouchableOpacity, FlatList } from "react-native";
 import CustomText from "../CustomText";
 
+import { connect } from "react-redux";
+
+import { setMove } from "../../actions";
+
 const ActionList = ({ setMove }) => {
   const data = [
     {
       label: "Fight",
       action: () => {
         setMove("select-pokemon-move");
-        // todo: add code for dispatching action to select Pokemon move
       }
     },
     {
       label: "Switch",
       action: () => {
         setMove("select-pokemon");
-        // todo: add code for dispatching action to switch Pokemon
       }
     }
   ];
@@ -47,8 +49,15 @@ const styles = {
   }
 };
 
-// todo: add mapStateToProps (team)
+const mapDispatchToProps = dispatch => {
+  return {
+    setMove: move => {
+      dispatch(setMove(move));
+    }
+  };
+};
 
-// todo: add mapDispatchToProps (setMove)
-
-export default ActionList; // todo: convert component into a connected component
+export default connect(
+  null,
+  mapDispatchToProps
+)(ActionList);

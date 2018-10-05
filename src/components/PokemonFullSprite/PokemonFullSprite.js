@@ -7,6 +7,9 @@ const PokemonFullSprite = ({ spriteFront, spriteBack, orientation }) => {
 };
 
 const styles = {
+  container: {
+    paddingBottom: 20
+  },
   image: {
     width: 150
   }

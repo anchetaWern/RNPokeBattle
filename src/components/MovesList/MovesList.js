@@ -2,13 +2,24 @@ import React from "react";
 import { TouchableOpacity, FlatList } from "react-native";
 import CustomText from "../CustomText";
 
-// todo: import Redux packages
-// todo: import actions
-// todo: import helper functions
+import { connect } from "react-redux";
+import {
+  setOpponentPokemonHealth,
+  removePokemonFromOpponentTeam,
+  setOpponentPokemon,
+  setMove
+} from "../../actions";
+
+import getMoveEffectivenessAndDamage from "../../helpers/getMoveEffectivenessAndDamage";
 
 const MovesList = ({
-  moves
-  // access props that were set using mapStateToProps
+  moves,
+  opponent_pokemon,
+  setOpponentPokemonHealth,
+  removePokemonFromOpponentTeam,
+  setOpponentPokemon,
+  setMove
+  // todo: extract opponents channel
 }) => {
   return (
     <FlatList
@@ -20,12 +31,30 @@ const MovesList = ({
         <TouchableOpacity
           style={styles.container}
           onPress={() => {
-            /*
-            todo:
-            - dispatch action for setting message to display in the message box
-            - dispatch action for updating the health of the opponent's current Pokemon
-            - if opponent Pokemon's health goes below 1, dispatch action for removing opponent's current Pokemon from their team
-            */
+            let { damage } = getMoveEffectivenessAndDamage(
+              item,
+              opponent_pokemon
+            );
+            let health = opponent_pokemon.current_hp - damage;
+
+            // todo: emit event on opponents channel so their UI stays in sync with the current health of their Pokemon
+
+            setOpponentPokemonHealth(opponent_pokemon.team_member_id, health);
+
+            if (health < 1) {
+              removePokemonFromOpponentTeam(opponent_pokemon.team_member_id);
+
+              /*
+              todo: remove this, since there will already be another player
+              on the other side who will switch their Pokemon once it faints
+              */
+
+              setMove("select-move");
+
+              setOpponentPokemon();
+            }
+
+            // todo: add code for setting move to "wait-for-turn" so the user won't be able to do anything until their opponent has also made their move
           }}
         >
           <CustomText styles={styles.label}>{item.title}</CustomText>
@@ -52,15 +81,34 @@ const styles = {
   }
 };
 
-// todo: add mapStateToProps (opponent_team, pokemon, opponent_pokemon)
+const mapStateToProps = ({ battle }) => {
+  const { opponent_pokemon } = battle;
 
-/*
-todo: add mapDispatchToProps:
-  - setOpponentPokemonHealth
-  - removePokemonFromOpponentTeam
-  - setOpponentPokemon
-  - setMessage
-  - setMove
-*/
+  return {
+    opponent_pokemon
+  };
+};
 
-export default MovesList; // todo: convert the component into a connected component
+const mapDispatchToProps = dispatch => {
+  return {
+    setOpponentPokemonHealth: (team_member_id, health) => {
+      dispatch(setOpponentPokemonHealth(team_member_id, health));
+    },
+
+    removePokemonFromOpponentTeam: team_member_id => {
+      dispatch(removePokemonFromOpponentTeam(team_member_id));
+    },
+
+    setOpponentPokemon: () => {
+      dispatch(setOpponentPokemon());
+    },
+    setMove: move => {
+      dispatch(setMove(move));
+    }
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(MovesList);

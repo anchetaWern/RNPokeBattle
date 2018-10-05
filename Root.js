@@ -5,18 +5,23 @@ import LoginScreen from "./src/screens/LoginScreen";
 import BattleScreen from "./src/screens/BattleScreen";
 import TeamSelectionScreen from "./src/screens/TeamSelectionScreen";
 
+import { Provider } from "react-redux";
+import { compose, createStore } from "redux";
+import reducers from "./src/reducers";
+
 import Reactotron from "reactotron-react-native";
+import { reactotronRedux } from "reactotron-redux";
 
-// todo: import Redux packages
-// todo: import reducers
-
-Reactotron.configure({ host: "YOUR_INTERNAL_IP_ADDRESS" }) // 192.168.254.108
+Reactotron.configure({ host: "YOUR_INTERNAL_IP_ADDRESS" }) // example: 192.168.254.108
   .useReactNative()
-  .connect(); // todo: add
+  .use(reactotronRedux())
+  .connect();
+
+const store = Reactotron.createStore(reducers, {}, compose());
+
+//const store = createStore(reducers); // replace the above code with this one on deployment
 
 console.ignoredYellowBox = ["Setting a timer"];
-
-// todo: create global app store
 
 const RootStack = createStackNavigator(
   {
@@ -31,8 +36,11 @@ const RootStack = createStackNavigator(
 
 class Router extends Component {
   render() {
-    // todo: wrap in Provider component and pass store as prop
-    return <RootStack />;
+    return (
+      <Provider store={store}>
+        <RootStack />
+      </Provider>
+    );
   }
 }
 
