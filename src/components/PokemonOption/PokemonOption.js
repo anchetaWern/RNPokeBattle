@@ -6,7 +6,7 @@ import { Entypo } from "@expo/vector-icons";
 
 import { connect } from "react-redux";
 
-import { selectPokemon, setPokemon, setMove } from "../../actions";
+import { selectPokemon, setPokemon, setMove, setMessage } from "../../actions";
 
 const PokemonOption = ({
   pokemon_data,
@@ -14,8 +14,10 @@ const PokemonOption = ({
   action_type,
   togglePokemon,
   setPokemon,
-  backToMove
-  // todo: extract opponents channel from props
+  setMessage,
+  setMove,
+  backToMove,
+  opponents_channel
 }) => {
   let compact = action_type == "select-pokemon" ? false : true;
   let marginTop = compact ? {} : { marginTop: 20 };
@@ -29,13 +31,17 @@ const PokemonOption = ({
         if (action_type == "select-pokemon") {
           togglePokemon(id, pokemon_data, is_selected);
         } else if (action_type == "switch-pokemon") {
+          setMessage(`You used ${pokemon_data.label}`);
           setPokemon(pokemon_data);
 
-          // todo: emit event to inform opponent that they've switched Pokemon
+          opponents_channel.trigger("client-switched-pokemon", {
+            team_member_id: pokemon_data.team_member_id
+          });
 
-          backToMove();
-
-          // todo: dispatch action for setting user to wait for their turn
+          setTimeout(() => {
+            setMessage("Please wait for your turn...");
+            setMove("wait-for-turn");
+          }, 2000);
         }
       }}
     >
@@ -76,6 +82,13 @@ const mapDispatchToProps = dispatch => {
     },
     setPokemon: pokemon => {
       dispatch(setPokemon(pokemon));
+    },
+
+    setMessage: message => {
+      dispatch(setMessage(message));
+    },
+    setMove: move => {
+      dispatch(setMove(move));
     }
   };
 };

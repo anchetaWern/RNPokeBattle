@@ -4,10 +4,11 @@ import CustomText from "../CustomText";
 
 import { connect } from "react-redux";
 import {
+  setMove,
   setOpponentPokemonHealth,
   removePokemonFromOpponentTeam,
   setOpponentPokemon,
-  setMove
+  setMessage
 } from "../../actions";
 
 import getMoveEffectivenessAndDamage from "../../helpers/getMoveEffectivenessAndDamage";
@@ -16,10 +17,15 @@ const MovesList = ({
   moves,
   opponent_pokemon,
   setOpponentPokemonHealth,
+
+  backToMove,
+  pokemon,
+  setMessage,
+  setMove,
+  opponent_team,
   removePokemonFromOpponentTeam,
   setOpponentPokemon,
-  setMove
-  // todo: extract opponents channel
+  opponents_channel
 }) => {
   return (
     <FlatList
@@ -31,30 +37,34 @@ const MovesList = ({
         <TouchableOpacity
           style={styles.container}
           onPress={() => {
-            let { damage } = getMoveEffectivenessAndDamage(
+            let { effectiveness, damage } = getMoveEffectivenessAndDamage(
               item,
               opponent_pokemon
             );
             let health = opponent_pokemon.current_hp - damage;
 
-            // todo: emit event on opponents channel so their UI stays in sync with the current health of their Pokemon
+            let message = `${pokemon.label} used ${
+              item.title
+            }! ${effectiveness}`;
+
+            setMessage(message);
+
+            opponents_channel.trigger("client-pokemon-attacked", {
+              team_member_id: opponent_pokemon.team_member_id,
+              message: message,
+              health: health
+            });
 
             setOpponentPokemonHealth(opponent_pokemon.team_member_id, health);
 
             if (health < 1) {
               removePokemonFromOpponentTeam(opponent_pokemon.team_member_id);
-
-              /*
-              todo: remove this, since there will already be another player
-              on the other side who will switch their Pokemon once it faints
-              */
-
-              setMove("select-move");
-
-              setOpponentPokemon();
             }
 
-            // todo: add code for setting move to "wait-for-turn" so the user won't be able to do anything until their opponent has also made their move
+            setTimeout(() => {
+              setMessage("Please wait for your turn...");
+              setMove("wait-for-turn");
+            }, 1500);
           }}
         >
           <CustomText styles={styles.label}>{item.title}</CustomText>
@@ -76,31 +86,39 @@ const styles = {
     backgroundColor: "#ffd43b",
     marginBottom: 10
   },
+
   label: {
     fontSize: 14
   }
 };
 
 const mapStateToProps = ({ battle }) => {
-  const { opponent_pokemon } = battle;
+  const { opponent_team, pokemon, opponent_pokemon } = battle;
 
   return {
+    opponent_team,
+    pokemon,
     opponent_pokemon
   };
 };
 
 const mapDispatchToProps = dispatch => {
   return {
+    backToMove: () => {
+      dispatch(setMove("select-move"));
+    },
     setOpponentPokemonHealth: (team_member_id, health) => {
       dispatch(setOpponentPokemonHealth(team_member_id, health));
     },
-
     removePokemonFromOpponentTeam: team_member_id => {
       dispatch(removePokemonFromOpponentTeam(team_member_id));
     },
-
     setOpponentPokemon: () => {
       dispatch(setOpponentPokemon());
+    },
+
+    setMessage: message => {
+      dispatch(setMessage(message));
     },
     setMove: move => {
       dispatch(setMove(move));

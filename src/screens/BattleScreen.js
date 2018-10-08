@@ -1,5 +1,9 @@
 import React, { Component } from "react";
-import { View, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+
+import { connect } from "react-redux";
+
+import { Ionicons } from "@expo/vector-icons";
 
 import CustomText from "../components/CustomText";
 import PokemonFullSprite from "../components/PokemonFullSprite";
@@ -8,10 +12,6 @@ import ActionList from "../components/ActionList";
 import MovesList from "../components/MovesList";
 import PokemonList from "../components/PokemonList";
 
-import { connect } from "react-redux";
-
-import { Ionicons } from "@expo/vector-icons";
-
 import pokemon_data from "../data/pokemon_data.js";
 import moves_data from "../data/moves_data";
 
@@ -19,26 +19,53 @@ import uniqid from "../helpers/uniqid";
 import randomInt from "../helpers/randomInt";
 import shuffleArray from "../helpers/shuffleArray";
 
-import { setOpponentTeam, setOpponentPokemon, setMove } from "../actions";
+import {
+  setOpponentTeam,
+  setMove,
+  setOpponentPokemon,
+  setPokemonHealth,
+  removePokemonFromTeam,
+  setMessage,
+  removePokemonFromOpponentTeam
+} from "../actions";
 
 class BattleScreen extends Component {
   static navigationOptions = {
     header: null
   };
 
+  constructor(props) {
+    super(props);
+    this.opponents_channel = null;
+  }
+
   async componentDidMount() {
-    const { setOpponentTeam, setOpponentPokemon } = this.props;
+    const {
+      setOpponentTeam,
+      setOpponentPokemon,
 
-    let random_pokemon_ids = [];
-    for (let x = 0; x <= 5; x++) {
-      random_pokemon_ids.push(randomInt(1, 54));
-    }
+      navigation,
+      team,
+      setMove,
+      removePokemonFromOpposingTeam,
+      setMessage,
+      setPokemonHealth,
+      removePokemonFromTeam
+    } = this.props;
+    let pusher = navigation.getParam("pusher");
 
-    let opposing_team = pokemon_data.filter(item => {
-      return random_pokemon_ids.indexOf(item.id) !== -1;
+    const { username, pokemon_ids, team_member_ids } = navigation.getParam(
+      "opponent"
+    );
+
+    let opponent_pokemon_ids = pokemon_ids.split(",");
+    let opponent_team_member_ids = team_member_ids.split(",");
+
+    let opponent_team_data = pokemon_data.filter(item => {
+      return opponent_pokemon_ids.indexOf(item.id.toString()) !== -1;
     });
 
-    opposing_team = opposing_team.map(item => {
+    opponent_team_data = opponent_team_data.map((item, index) => {
       let hp = 500;
 
       let shuffled_moves = shuffleArray(item.moves);
@@ -48,11 +75,8 @@ class BattleScreen extends Component {
         return selected_moves.indexOf(item.id) !== -1;
       });
 
-      let member_id = uniqid();
-
       return {
         ...item,
-        team_member_id: member_id,
         current_hp: hp,
         total_hp: hp,
         moves: moves,
@@ -60,50 +84,89 @@ class BattleScreen extends Component {
       };
     });
 
-    setOpponentTeam(opposing_team);
-    setOpponentPokemon(opposing_team[0]);
+    let sorted_opponent_team = [];
+    opponent_pokemon_ids.forEach((id, index) => {
+      let team_member = opponent_team_data.find(
+        item => id == item.id.toString()
+      );
+      team_member.team_member_id = opponent_team_member_ids[index];
+      sorted_opponent_team.push(team_member);
+    });
 
-    // todo: get reference to Pusher connection from navigation param
+    setOpponentTeam(sorted_opponent_team);
+    setOpponentPokemon(sorted_opponent_team[0]);
 
-    /*
-    todo:
-    - get opponent's Pokemon IDs and team member IDs from navigation param
-    - construct the opponent team array based on the Pokemon IDs
-    - sort the opponent team array based on the ordering of the team member IDs from the navigation param
-    - add the team member ID to each Pokemon
-    - dispatch action for setting the opponent Pokemon team and setting the current opponent Pokemon
-    */
+    this.opponents_channel = pusher.subscribe(`private-user-${username}`);
+    this.opponents_channel.bind("pusher:subscription_error", status => {
+      Alert.alert(
+        "Error",
+        "Subscription error occurred. Please restart the app"
+      );
+    });
 
-    /*
-    todo:
-    - determine if it's the user's turn, if not then dispatch an action to set them to wait for their turn
-    */
+    this.opponents_channel.bind("pusher:subscription_succeeded", data => {
+      const first_turn = navigation.getParam("first_turn");
 
-    /*
-    todo:
+      if (first_turn != "you") {
+        setMessage("Please wait for you turn...");
+        setMove("wait-for-turn");
+      }
+    });
 
-    - listen for event for when the opponent switched Pokemon
-    - find the Pokemon from the opponent team array
-    - dispatch action that will set the opponent Pokemon
-    - dispatch action that will allow the current user to make a move
-    */
+    let my_channel = navigation.getParam("my_channel");
 
-    /*
-    todo:
+    my_channel.bind("client-switched-pokemon", ({ team_member_id }) => {
+      let pokemon = sorted_opponent_team.find(item => {
+        return item.team_member_id == team_member_id;
+      });
 
-    - listen for event when the opponent Pokemon attacked the current user's Pokemon
-    - dispatch action that will update the current Pokemon's health
-    - if current Pokemon's health goes below 1, remove current Pokemon from team
-    - emit event that will let the opponent know that their opponent's Pokemon has fainted
-    - dispatch action that will allow the current user to pick a Pokemon to switch to
-    */
+      setMessage(`Opponent changed Pokemon to ${pokemon.label}`);
+      setOpponentPokemon(pokemon);
 
-    /*
-    todo:
+      setTimeout(() => {
+        setMove("select-move");
+      }, 1500);
+    });
 
-    - listen for event for when the opponent's Pokemon fainted
-    - dispatch event that will remove the opponent's current Pokemon from the opposing team
-    */
+    my_channel.bind("client-pokemon-attacked", data => {
+      setMessage(data.message);
+
+      setTimeout(() => {
+        setPokemonHealth(data.team_member_id, data.health);
+        setMove("select-move");
+      }, 1500);
+
+      if (data.health < 1) {
+        let fainted_pokemon = team.find(item => {
+          return item.team_member_id == data.team_member_id;
+        });
+
+        setTimeout(() => {
+          setPokemonHealth(data.team_member_id, 0); // new
+
+          setMessage(`${fainted_pokemon.label} fainted`);
+          removePokemonFromTeam(data.team_member_id);
+
+          // let the opponent know that their opponent's pokemon has fainted
+          this.opponents_channel.trigger("client-opponent-pokemon-fainted", {
+            team_member_id: fainted_pokemon.team_member_id,
+            pokemon_name: fainted_pokemon.label
+          });
+        }, 1000);
+
+        setTimeout(() => {
+          setMove("select-pokemon");
+        }, 2000);
+      }
+    });
+
+    my_channel.bind(
+      "client-opponent-pokemon-fainted",
+      ({ team_member_id, pokemon_name }) => {
+        setMessage(`Opposing ${pokemon_name} fainted.`);
+        removePokemonFromOpposingTeam(team_member_id);
+      }
+    );
   }
 
   render() {
@@ -113,7 +176,9 @@ class BattleScreen extends Component {
       move_display_text,
       pokemon,
       opponent_pokemon,
-      backToMove
+      backToMove,
+
+      message
     } = this.props;
 
     return (
@@ -168,25 +233,37 @@ class BattleScreen extends Component {
               </TouchableOpacity>
             )}
 
-            <CustomText styles={styles.controlsHeaderText}>
-              {move_display_text}
-            </CustomText>
+            {move != "wait-for-turn" && (
+              <CustomText styles={styles.controlsHeaderText}>
+                {move_display_text}
+              </CustomText>
+            )}
+
+            {move == "wait-for-turn" && (
+              <CustomText styles={styles.message}>{message}</CustomText>
+            )}
           </View>
 
           {move == "select-move" && <ActionList />}
 
-          {move == "select-pokemon" && (
-            <PokemonList
-              data={team}
-              scrollEnabled={false}
-              numColumns={2}
-              action_type={"switch-pokemon"}
-            />
-          )}
+          {move == "select-pokemon" &&
+            this.opponents_channel && (
+              <PokemonList
+                data={team}
+                scrollEnabled={false}
+                numColumns={2}
+                action_type={"switch-pokemon"}
+                opponents_channel={this.opponents_channel}
+              />
+            )}
 
           {pokemon &&
+            this.opponents_channel &&
             move == "select-pokemon-move" && (
-              <MovesList moves={pokemon.moves} />
+              <MovesList
+                moves={pokemon.moves}
+                opponents_channel={this.opponents_channel}
+              />
             )}
         </View>
       </View>
@@ -201,7 +278,9 @@ const mapStateToProps = ({ battle }) => {
     move_display_text,
     pokemon,
     opponent_team,
-    opponent_pokemon
+    opponent_pokemon,
+
+    message
   } = battle;
   return {
     team,
@@ -209,7 +288,9 @@ const mapStateToProps = ({ battle }) => {
     move_display_text,
     pokemon,
     opponent_team,
-    opponent_pokemon
+    opponent_pokemon,
+
+    message
   };
 };
 
@@ -223,6 +304,22 @@ const mapDispatchToProps = dispatch => {
     },
     setOpponentPokemon: pokemon => {
       dispatch(setOpponentPokemon(pokemon));
+    },
+
+    setMessage: message => {
+      dispatch(setMessage(message));
+    },
+    setPokemonHealth: (team_member_id, health) => {
+      dispatch(setPokemonHealth(team_member_id, health));
+    },
+    setMove: move => {
+      dispatch(setMove(move));
+    },
+    removePokemonFromTeam: team_member_id => {
+      dispatch(removePokemonFromTeam(team_member_id));
+    },
+    removePokemonFromOpposingTeam: team_member_id => {
+      dispatch(removePokemonFromOpponentTeam(team_member_id));
     }
   };
 };

@@ -1,5 +1,6 @@
 import React from "react";
 import { FlatList } from "react-native";
+import CustomText from "../CustomText";
 
 import PokemonOption from "../PokemonOption";
 
@@ -7,8 +8,8 @@ const PokemonList = ({
   data,
   numColumns,
   scrollEnabled,
-  action_type
-  // todo: extract opponents channel and pass it as props to PokemonOption
+  action_type,
+  opponents_channel
 }) => {
   return (
     <FlatList
@@ -22,6 +23,7 @@ const PokemonList = ({
           pokemon_data={item}
           is_selected={item.is_selected}
           action_type={action_type}
+          opponents_channel={opponents_channel}
         />
       )}
     />

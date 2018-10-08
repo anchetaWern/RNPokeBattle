@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { View, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 
 import CustomText from "../components/CustomText";
 import PokemonList from "../components/PokemonList";
@@ -14,6 +14,8 @@ import shuffleArray from "../helpers/shuffleArray";
 
 import moves_data from "../data/moves_data";
 
+import Pusher from "pusher-js/react-native";
+
 class TeamSelectionScreen extends Component {
   static navigationOptions = {
     header: null
@@ -25,7 +27,9 @@ class TeamSelectionScreen extends Component {
 
   constructor(props) {
     super(props);
-    // todo: initialize Pusher and current user's channel
+
+    this.pusher = null;
+    this.my_channel = null;
   }
 
   render() {
@@ -68,7 +72,8 @@ class TeamSelectionScreen extends Component {
     const { selected_pokemon, setTeam, setPokemon, navigation } = this.props;
 
     let team = [...selected_pokemon];
-
+    let pokemon_ids = [];
+    let team_member_ids = [];
     team = team.map(item => {
       let hp = 500;
 
@@ -80,6 +85,9 @@ class TeamSelectionScreen extends Component {
       });
 
       let member_id = uniqid();
+
+      pokemon_ids.push(item.id);
+      team_member_ids.push(member_id);
 
       return {
         ...item,
@@ -98,24 +106,62 @@ class TeamSelectionScreen extends Component {
       is_loading: true
     });
 
-    // note: this is only temporary, in part 3, this will be updated so that once opponent is found, it will automatically navigate to the Battle screen
-    setTimeout(() => {
-      const username = navigation.getParam("username");
+    const username = navigation.getParam("username");
 
-      this.setState({
-        is_loading: false
+    this.pusher = new Pusher("YOUR_PUSHER_APP_ID", {
+      authEndpoint: "YOUR_NGROK_URL/pusher/auth",
+      cluster: "YOUR_PUSHER_APP_CLUSTER",
+      encrypted: true,
+      auth: {
+        params: {
+          username: username,
+          pokemon_ids: pokemon_ids,
+          team_member_ids: team_member_ids
+        }
+      }
+    });
+
+    this.my_channel = this.pusher.subscribe(`private-user-${username}`);
+    this.my_channel.bind("pusher:subscription_error", status => {
+      Alert.alert(
+        "Error",
+        "Subscription error occurred. Please restart the app"
+      );
+    });
+
+    this.my_channel.bind("pusher:subscription_succeeded", data => {
+      this.my_channel.bind("opponent-found", data => {
+        let opponent =
+          username == data.player_one.username
+            ? data.player_two
+            : data.player_one;
+
+        let first_turn =
+          username == data.player_one.username
+            ? "you"
+            : data.player_two.username;
+
+        Alert.alert(
+          "Opponent found!",
+          `${
+            opponent.username
+          } will take you on! First turn goes to ${first_turn}`
+        );
+
+        this.setState({
+          is_loading: false,
+          username: ""
+        });
+
+        navigation.navigate("Battle", {
+          pusher: this.pusher,
+          username: username,
+          opponent: opponent,
+          my_channel: this.my_channel,
+          first_turn: first_turn
+        });
       });
-
-      navigation.navigate("Battle", {
-        username: username
-      });
-    }, 2500);
-
-    // todo: connect to Pusher
-
-    // todo: subscribe to current user's channel
-
-    // todo: listen for opponent-found event, navigate to Battle screen with the Pusher connection, opponent details, user's channel
+    });
   };
 }
 
