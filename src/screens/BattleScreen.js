@@ -146,12 +146,6 @@ class BattleScreen extends Component {
 
           setMessage(`${fainted_pokemon.label} fainted`);
           removePokemonFromTeam(data.team_member_id);
-
-          // let the opponent know that their opponent's pokemon has fainted
-          this.opponents_channel.trigger("client-opponent-pokemon-fainted", {
-            team_member_id: fainted_pokemon.team_member_id,
-            pokemon_name: fainted_pokemon.label
-          });
         }, 1000);
 
         setTimeout(() => {
@@ -159,14 +153,6 @@ class BattleScreen extends Component {
         }, 2000);
       }
     });
-
-    my_channel.bind(
-      "client-opponent-pokemon-fainted",
-      ({ team_member_id, pokemon_name }) => {
-        setMessage(`Opposing ${pokemon_name} fainted.`);
-        removePokemonFromOpposingTeam(team_member_id);
-      }
-    );
   }
 
   render() {

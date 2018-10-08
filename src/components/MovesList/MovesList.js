@@ -22,7 +22,6 @@ const MovesList = ({
   pokemon,
   setMessage,
   setMove,
-  opponent_team,
   removePokemonFromOpponentTeam,
   setOpponentPokemon,
   opponents_channel
@@ -58,6 +57,7 @@ const MovesList = ({
             setOpponentPokemonHealth(opponent_pokemon.team_member_id, health);
 
             if (health < 1) {
+              setOpponentPokemonHealth(opponent_pokemon.team_member_id, 0);
               removePokemonFromOpponentTeam(opponent_pokemon.team_member_id);
             }
 
@@ -93,12 +93,11 @@ const styles = {
 };
 
 const mapStateToProps = ({ battle }) => {
-  const { opponent_team, pokemon, opponent_pokemon } = battle;
+  const { opponent_pokemon, pokemon } = battle;
 
   return {
-    opponent_team,
-    pokemon,
-    opponent_pokemon
+    opponent_pokemon,
+    pokemon
   };
 };
 
