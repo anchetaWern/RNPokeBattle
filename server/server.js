@@ -23,10 +23,6 @@ app.get("/", function(req, res) {
   res.send("all green...");
 });
 
-function randomArrayIndex(max) {
-  return Math.floor(Math.random() * max);
-}
-
 app.post("/pusher/auth", function(req, res) {
   var username = req.body.username;
   var pokemon_ids = req.body.pokemon_ids;
@@ -47,11 +43,11 @@ app.post("/pusher/auth", function(req, res) {
       team_member_ids: team_member_ids
     });
 
-    if (users.length >= 2) {
-      var player_one_index = randomArrayIndex(users.length);
+    if (users.length == 2) {
+      var player_one_index = 0;
       var player_one = users.splice(player_one_index, 1)[0];
 
-      var player_two_index = randomArrayIndex(users.length);
+      var player_two_index = 0;
       var player_two = users.splice(player_two_index, 1)[0];
 
       // trigger a message to each players. the message contains the IDs of the Pokemon of their opponent
