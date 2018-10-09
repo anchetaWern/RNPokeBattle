@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Component } from "react";
 import { View, TouchableOpacity, Image } from "react-native";
 import CustomText from "../CustomText";
 
@@ -8,55 +8,73 @@ import { connect } from "react-redux";
 
 import { selectPokemon, setPokemon, setMove, setMessage } from "../../actions";
 
-const PokemonOption = ({
-  pokemon_data,
-  is_selected,
-  action_type,
-  togglePokemon,
-  setPokemon,
-  setMessage,
-  setMove,
-  backToMove,
-  opponents_channel
-}) => {
-  let compact = action_type == "select-pokemon" ? false : true;
-  let marginTop = compact ? {} : { marginTop: 20 };
-  let imageStyle = compact ? { width: 40 } : { width: 60 };
+import { Audio } from "expo";
 
-  const { id, label, sprite } = pokemon_data;
+class PokemonOption extends Component {
+  render() {
+    const { pokemon_data, is_selected, action_type } = this.props;
 
-  return (
-    <TouchableOpacity
-      onPress={() => {
-        if (action_type == "select-pokemon") {
-          togglePokemon(id, pokemon_data, is_selected);
-        } else if (action_type == "switch-pokemon") {
-          setMessage(`You used ${pokemon_data.label}`);
-          setPokemon(pokemon_data);
+    let compact = action_type == "select-pokemon" ? false : true;
+    let marginTop = compact ? {} : { marginTop: 20 };
+    let imageStyle = compact ? { width: 40 } : { width: 60 };
 
-          opponents_channel.trigger("client-switched-pokemon", {
-            team_member_id: pokemon_data.team_member_id
-          });
+    const { label, sprite } = pokemon_data;
 
-          setTimeout(() => {
-            setMessage("Please wait for your turn...");
-            setMove("wait-for-turn");
-          }, 2000);
-        }
-      }}
-    >
-      <View style={[styles.container, marginTop]}>
-        <Image source={sprite} resizeMode={"contain"} style={imageStyle} />
-        <CustomText styles={[styles.text]}>{label}</CustomText>
-        <Entypo
-          name="check"
-          size={18}
-          color={is_selected ? "#40c057" : "#FFF"}
-        />
-      </View>
-    </TouchableOpacity>
-  );
-};
+    return (
+      <TouchableOpacity onPress={this.selectPokemon}>
+        <View style={[styles.container, marginTop]}>
+          <Image source={sprite} resizeMode={"contain"} style={imageStyle} />
+          <CustomText styles={[styles.text]}>{label}</CustomText>
+          <Entypo
+            name="check"
+            size={18}
+            color={is_selected ? "#40c057" : "#FFF"}
+          />
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  selectPokemon = async () => {
+    const {
+      pokemon_data,
+      is_selected,
+      action_type,
+      togglePokemon,
+      setPokemon,
+      setMessage,
+      setMove,
+      backToMove,
+      opponents_channel
+    } = this.props;
+
+    const { id, cry } = pokemon_data;
+
+    if (action_type == "select-pokemon") {
+      togglePokemon(id, pokemon_data, is_selected);
+    } else if (action_type == "switch-pokemon") {
+      setMessage(`You used ${pokemon_data.label}`);
+      setPokemon(pokemon_data);
+
+      opponents_channel.trigger("client-switched-pokemon", {
+        team_member_id: pokemon_data.team_member_id
+      });
+
+      try {
+        let crySound = new Audio.Sound();
+        await crySound.loadAsync(cry);
+        await crySound.playAsync();
+      } catch (error) {
+        console.log("error loading cry: ", error);
+      }
+
+      setTimeout(() => {
+        setMessage("Please wait for your turn...");
+        setMove("wait-for-turn");
+      }, 2000);
+    }
+  };
+}
 
 const styles = {
   container: {

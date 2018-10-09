@@ -16,6 +16,8 @@ import moves_data from "../data/moves_data";
 
 import Pusher from "pusher-js/react-native";
 
+import { Audio } from "expo";
+
 class TeamSelectionScreen extends Component {
   static navigationOptions = {
     header: null
@@ -30,6 +32,21 @@ class TeamSelectionScreen extends Component {
 
     this.pusher = null;
     this.my_channel = null;
+
+    this.backgroundSound = null;
+  }
+
+  async componentDidMount() {
+    try {
+      this.backgroundSound = new Audio.Sound();
+      await this.backgroundSound.loadAsync(
+        require("../assets/sounds/background/final-road.mp3")
+      );
+      await this.backgroundSound.setIsLoopingAsync(true);
+      await this.backgroundSound.playAsync();
+    } catch (error) {
+      console.log("error loading background sound: ", error);
+    }
   }
 
   render() {
@@ -108,7 +125,7 @@ class TeamSelectionScreen extends Component {
 
     const username = navigation.getParam("username");
 
-    this.pusher = new Pusher("YOUR_PUSHER_APP_ID", {
+    this.pusher = new Pusher("YOUR_PUSHER_APP_KEY", {
       authEndpoint: "YOUR_NGROK_URL/pusher/auth",
       cluster: "YOUR_PUSHER_APP_CLUSTER",
       encrypted: true,
@@ -152,6 +169,8 @@ class TeamSelectionScreen extends Component {
           is_loading: false,
           username: ""
         });
+
+        this.backgroundSound.stopAsync();
 
         navigation.navigate("Battle", {
           pusher: this.pusher,

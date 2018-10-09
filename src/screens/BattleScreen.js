@@ -5,6 +5,8 @@ import { connect } from "react-redux";
 
 import { Ionicons } from "@expo/vector-icons";
 
+import { Audio } from "expo";
+
 import CustomText from "../components/CustomText";
 import PokemonFullSprite from "../components/PokemonFullSprite";
 import HealthBar from "../components/HealthBar";
@@ -37,6 +39,8 @@ class BattleScreen extends Component {
   constructor(props) {
     super(props);
     this.opponents_channel = null;
+
+    this.backgroundSound = null;
   }
 
   async componentDidMount() {
@@ -115,13 +119,21 @@ class BattleScreen extends Component {
 
     let my_channel = navigation.getParam("my_channel");
 
-    my_channel.bind("client-switched-pokemon", ({ team_member_id }) => {
+    my_channel.bind("client-switched-pokemon", async ({ team_member_id }) => {
       let pokemon = sorted_opponent_team.find(item => {
         return item.team_member_id == team_member_id;
       });
 
       setMessage(`Opponent changed Pokemon to ${pokemon.label}`);
       setOpponentPokemon(pokemon);
+
+      try {
+        let crySound = new Audio.Sound();
+        await crySound.loadAsync(pokemon.cry);
+        await crySound.playAsync();
+      } catch (error) {
+        console.log("error loading cry: ", error);
+      }
 
       setTimeout(() => {
         setMove("select-move");
@@ -141,11 +153,19 @@ class BattleScreen extends Component {
           return item.team_member_id == data.team_member_id;
         });
 
-        setTimeout(() => {
+        setTimeout(async () => {
           setPokemonHealth(data.team_member_id, 0); // new
 
           setMessage(`${fainted_pokemon.label} fainted`);
           removePokemonFromTeam(data.team_member_id);
+
+          try {
+            let crySound = new Audio.Sound();
+            await crySound.loadAsync(fainted_pokemon.cry);
+            await crySound.playAsync();
+          } catch (error) {
+            console.log("error loading cry: ", error);
+          }
         }, 1000);
 
         setTimeout(() => {
@@ -153,6 +173,17 @@ class BattleScreen extends Component {
         }, 2000);
       }
     });
+
+    try {
+      this.backgroundSound = new Audio.Sound();
+      await this.backgroundSound.loadAsync(
+        require("../assets/sounds/background/rival.mp3")
+      );
+      await this.backgroundSound.setIsLoopingAsync(true);
+      await this.backgroundSound.playAsync();
+    } catch (error) {
+      console.log("error loading background sound: ", error);
+    }
   }
 
   render() {

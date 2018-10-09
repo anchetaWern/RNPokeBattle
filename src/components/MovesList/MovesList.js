@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Component } from "react";
 import { TouchableOpacity, FlatList } from "react-native";
 import CustomText from "../CustomText";
 
@@ -13,66 +13,82 @@ import {
 
 import getMoveEffectivenessAndDamage from "../../helpers/getMoveEffectivenessAndDamage";
 
-const MovesList = ({
-  moves,
-  opponent_pokemon,
-  setOpponentPokemonHealth,
+import { Audio } from "expo";
 
-  backToMove,
-  pokemon,
-  setMessage,
-  setMove,
-  removePokemonFromOpponentTeam,
-  setOpponentPokemon,
-  opponents_channel
-}) => {
-  return (
-    <FlatList
-      data={moves}
-      numColumns={2}
-      scrollEnabled={false}
-      keyExtractor={(item, index) => item.id.toString()}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.container}
-          onPress={() => {
-            let { effectiveness, damage } = getMoveEffectivenessAndDamage(
-              item,
-              opponent_pokemon
-            );
-            let health = opponent_pokemon.current_hp - damage;
+class MovesList extends Component {
+  render() {
+    const { moves } = this.props;
 
-            let message = `${pokemon.label} used ${
-              item.title
-            }! ${effectiveness}`;
+    return (
+      <FlatList
+        data={moves}
+        numColumns={2}
+        scrollEnabled={false}
+        keyExtractor={(item, index) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.container}
+            onPress={this.selectMove.bind(this, item)}
+          >
+            <CustomText styles={styles.label}>{item.title}</CustomText>
+          </TouchableOpacity>
+        )}
+      />
+    );
+  }
 
-            setMessage(message);
+  selectMove = async item => {
+    const {
+      moves,
+      opponent_pokemon,
+      setOpponentPokemonHealth,
 
-            opponents_channel.trigger("client-pokemon-attacked", {
-              team_member_id: opponent_pokemon.team_member_id,
-              message: message,
-              health: health
-            });
+      backToMove,
+      pokemon,
+      setMessage,
+      setMove,
+      removePokemonFromOpponentTeam,
+      setOpponentPokemon,
+      opponents_channel
+    } = this.props;
 
-            setOpponentPokemonHealth(opponent_pokemon.team_member_id, health);
+    let { effectiveness, damage } = getMoveEffectivenessAndDamage(
+      item,
+      opponent_pokemon
+    );
+    let health = opponent_pokemon.current_hp - damage;
 
-            if (health < 1) {
-              setOpponentPokemonHealth(opponent_pokemon.team_member_id, 0);
-              removePokemonFromOpponentTeam(opponent_pokemon.team_member_id);
-            }
+    let message = `${pokemon.label} used ${item.title}! ${effectiveness}`;
 
-            setTimeout(() => {
-              setMessage("Please wait for your turn...");
-              setMove("wait-for-turn");
-            }, 1500);
-          }}
-        >
-          <CustomText styles={styles.label}>{item.title}</CustomText>
-        </TouchableOpacity>
-      )}
-    />
-  );
-};
+    setMessage(message);
+
+    opponents_channel.trigger("client-pokemon-attacked", {
+      team_member_id: opponent_pokemon.team_member_id,
+      message: message,
+      health: health
+    });
+
+    setOpponentPokemonHealth(opponent_pokemon.team_member_id, health);
+
+    if (health < 1) {
+      setOpponentPokemonHealth(opponent_pokemon.team_member_id, 0);
+      removePokemonFromOpponentTeam(opponent_pokemon.team_member_id);
+
+      try {
+        let crySound = new Audio.Sound();
+        await crySound.loadAsync(opponent_pokemon.cry);
+        await crySound.playAsync();
+      } catch (error) {
+        console.log("error loading cry: ", error);
+      }
+    }
+
+    setTimeout(() => {
+      setMessage("Please wait for your turn...");
+      setMove("wait-for-turn");
+    }, 1500);
+  };
+}
 
 const styles = {
   container: {
