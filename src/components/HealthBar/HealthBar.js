@@ -1,34 +1,76 @@
-import React from "react";
-import { View } from "react-native";
+import React, { Component } from "react";
+import { View, Animated } from "react-native";
 import CustomText from "../CustomText";
 
-const HealthBar = ({ label, currentHealth, totalHealth }) => {
-  let percent = (currentHealth / totalHealth) * 100;
-  let healthColor =
-    percent <= 15
-      ? "healthCritical"
-      : percent <= 45
-        ? "healthWarning"
-        : "healthOK";
+const available_width = 100;
 
-  let progressColor = styles[healthColor];
+class HealthBar extends Component {
+  state = {
+    currentHealth: this.props.currentHealth
+  };
 
-  return (
-    <View>
-      <CustomText styles={styles.label}>{label}</CustomText>
-      <View style={styles.container}>
-        <View style={styles.rail}>
-          <View style={[styles.progress, progressColor, { width: percent }]} />
-        </View>
-        <View style={styles.percent}>
-          <CustomText styles={styles.percentText}>
-            {parseInt(percent)}%
-          </CustomText>
+  constructor(props) {
+    super(props);
+    this.currentHealth = new Animated.Value(this.props.currentHealth);
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.currentHealth !== this.props.currentHealth) {
+      this.currentHealth.addListener(progress => {
+        this.setState({
+          currentHealth: progress.value
+        });
+      });
+
+      Animated.timing(this.currentHealth, {
+        duration: 1500,
+        toValue: this.props.currentHealth
+      }).start();
+    }
+  }
+
+  render() {
+    const { label } = this.props;
+
+    return (
+      <View>
+        <CustomText styles={styles.label}>{label}</CustomText>
+        <View style={styles.container}>
+          <View style={styles.rail}>
+            <Animated.View style={[this.getCurrentHealthStyles()]} />
+          </View>
+          <View style={styles.percent}>
+            <CustomText styles={styles.percentText}>
+              {parseInt(this.state.currentHealth / 5)}%
+            </CustomText>
+          </View>
         </View>
       </View>
-    </View>
-  );
-};
+    );
+  }
+
+  getCurrentHealthStyles = () => {
+    var animated_width = this.currentHealth.interpolate({
+      inputRange: [0, 250, 500],
+      outputRange: [0, available_width / 2, available_width]
+    });
+
+    const color_animation = this.currentHealth.interpolate({
+      inputRange: [0, 250, 500],
+      outputRange: [
+        "rgb(199, 45, 50)",
+        "rgb(224, 150, 39)",
+        "rgb(101, 203, 25)"
+      ]
+    });
+
+    return {
+      width: animated_width,
+      height: 8, // height of the health bar
+      backgroundColor: color_animation
+    };
+  };
+}
 
 const styles = {
   container: {
@@ -47,9 +89,6 @@ const styles = {
     borderWidth: 1,
     borderRadius: 3,
     borderColor: "#616161"
-  },
-  progress: {
-    height: 8
   },
   healthOK: {
     backgroundColor: "#5db56d"
