@@ -215,6 +215,7 @@ class BattleScreen extends Component {
                 spriteFront={opponent_pokemon.front}
                 spriteBack={opponent_pokemon.back}
                 orientation={"front"}
+                isAlive={opponent_pokemon.current_hp > 0}
               />
             </View>
           )}
@@ -232,6 +233,7 @@ class BattleScreen extends Component {
                 spriteFront={pokemon.front}
                 spriteBack={pokemon.back}
                 orientation={"back"}
+                isAlive={pokemon.current_hp > 0}
               />
             </View>
           )}
