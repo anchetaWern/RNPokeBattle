@@ -141,10 +141,10 @@ class BattleScreen extends Component {
     });
 
     my_channel.bind("client-pokemon-attacked", data => {
+      setPokemonHealth(data.team_member_id, data.health);
       setMessage(data.message);
 
       setTimeout(() => {
-        setPokemonHealth(data.team_member_id, data.health);
         setMove("select-move");
       }, 1500);
 
@@ -154,7 +154,7 @@ class BattleScreen extends Component {
         });
 
         setTimeout(async () => {
-          setPokemonHealth(data.team_member_id, 0); // new
+          setPokemonHealth(data.team_member_id, 0);
 
           setMessage(`${fainted_pokemon.label} fainted`);
           removePokemonFromTeam(data.team_member_id);
@@ -216,6 +216,7 @@ class BattleScreen extends Component {
                 spriteBack={opponent_pokemon.back}
                 orientation={"front"}
                 isAlive={opponent_pokemon.current_hp > 0}
+                currentHealth={opponent_pokemon.current_hp}
               />
             </View>
           )}
@@ -234,6 +235,7 @@ class BattleScreen extends Component {
                 spriteBack={pokemon.back}
                 orientation={"back"}
                 isAlive={pokemon.current_hp > 0}
+                currentHealth={pokemon.current_hp}
               />
             </View>
           )}

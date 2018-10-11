@@ -9,6 +9,10 @@ class PokemonFullSprite extends Component {
 
     this.sprite_translateY = new Animated.Value(0);
     this.sprite_scale = new Animated.Value(0);
+
+    this.pokemon_opacity = new Animated.Value(0);
+    this.punch_opacity = new Animated.Value(0);
+    this.punch_translateY = new Animated.Value(0);
   }
 
   componentDidMount() {
@@ -41,7 +45,43 @@ class PokemonFullSprite extends Component {
     ]).start();
   };
 
+  animateDamagePokemon = () => {
+    this.punch_opacity.setValue(0);
+    this.punch_translateY.setValue(0);
+    this.pokemon_opacity.setValue(0);
+
+    Animated.sequence([
+      Animated.timing(this.punch_opacity, {
+        toValue: 1,
+        duration: 10,
+        easing: Easing.in
+      }),
+      Animated.timing(this.punch_translateY, {
+        toValue: 1,
+        duration: 300,
+        easing: Easing.in
+      }),
+      Animated.timing(this.punch_opacity, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.in
+      }),
+      Animated.timing(this.pokemon_opacity, {
+        toValue: 1,
+        duration: 850,
+        easing: Easing.in
+      })
+    ]).start();
+  };
+
   componentDidUpdate(prevProps, prevState) {
+    if (
+      prevProps.pokemon === this.props.pokemon &&
+      prevProps.currentHealth !== this.props.currentHealth
+    ) {
+      this.animateDamagePokemon();
+    }
+
     if (prevProps.isAlive !== this.props.isAlive && !this.props.isAlive) {
       Animated.timing(this.sprite_translateY, {
         duration: 900,
@@ -77,6 +117,21 @@ class PokemonFullSprite extends Component {
       outputRange: [1, 0.5, 0]
     });
 
+    const punch_opacity = this.punch_opacity.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1]
+    });
+
+    const punch_moveY = this.punch_translateY.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, -130]
+    });
+
+    const pokemon_opacity = this.pokemon_opacity.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [1, 0.2, 1]
+    });
+
     return (
       <View>
         <Animated.Image
@@ -105,7 +160,23 @@ class PokemonFullSprite extends Component {
                 {
                   scale: pokemon_scale
                 }
-              ]
+              ],
+              opacity: pokemon_opacity
+            }
+          ]}
+        />
+
+        <Animated.Image
+          source={require("../../assets/images/things/fist.png")}
+          style={[
+            styles.punch,
+            {
+              transform: [
+                {
+                  translateY: punch_moveY
+                }
+              ],
+              opacity: punch_opacity
             }
           ]}
         />
@@ -120,6 +191,11 @@ const styles = {
   },
   image: {
     width: 150
+  },
+  punch: {
+    position: "absolute",
+    bottom: -40,
+    left: 50
   }
 };
 
