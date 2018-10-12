@@ -1,6 +1,8 @@
 # RNPokeBattle
 A two-player Pokemon battle game implemented with React Native and Pusher
 
+*Note: this is the branch for the second part of the tutorial. If you want to test the final output, switch to the master branch instead.*
+
 ### Prerequisites
 
 - React Native development environment or [Expo](https://expo.io/)
