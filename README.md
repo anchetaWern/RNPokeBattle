@@ -10,8 +10,6 @@ A two-player Pokemon battle game implemented with React Native and Pusher.
 - [Yarn](https://yarnpkg.com/en/)
 - [Expo account](https://expo.io/)
 - Expo [Android](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=en) or [iOS client app](https://itunes.apple.com/us/app/expo-client/id982107779?mt=8)
-- [Pusher app instance](https://pusher.com)
-- [Ngrok account](https://ngrok.com/)
 
 
 ## Getting Started
@@ -39,4 +37,3 @@ expo start
 ## Built With
 
 * [React Native](http://facebook.github.io/react-native/)
-* [Pusher Channels](https://pusher.com)
