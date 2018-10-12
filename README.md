@@ -86,3 +86,11 @@ expo start
 
 * [React Native](http://facebook.github.io/react-native/)
 * [Pusher Channels](https://pusher.com)
+
+## Credits
+
+- [Pokemonshowdown.com](https://pokemonshowdown.com/) - for the inspiration, and [Pokemon cry sounds](https://play.pokemonshowdown.com/audio/cries/).
+- [Pokemondb.net](https://pokemondb.net) - for the Pokemon [small sprites](https://pokemondb.net/sprites).
+- [khinsider.com](https://downloads.khinsider.com/) - for the [background sounds](https://downloads.khinsider.com/game-soundtracks/album/pokemon-gameboy-sound-collection).
+- [pokestadium.com](http://www.pokestadium.com/tools/sprites) - for the animated Pokemon sprites (front and back view).
+- [flaticon.com](https://www.flaticon.com) - [Pokeball icon](https://www.flaticon.com/free-icon/pokeball_361998) from [Nikita Golubev](https://www.flaticon.com/authors/nikita-golubev) and [boxing gloves icon](https://www.flaticon.com/free-icon/fist_189013) from [roundicons freebies](https://www.flaticon.com/authors/roundicons-freebies)
