@@ -3,6 +3,12 @@ A two-player Pokemon battle game implemented with React Native and Pusher.
 
 *Note: This is the starter project, it's the starting point for the series of tutorials. If you want to test the full app, switch to the master branch*
 
+Full tutorial is available here:
+
+- [Create a Pokemon battle game with React Native - Part 1: Practice mode](https://pusher.com/tutorials/pokemon-react-native-part-1)
+- [Create a Pokemon battle game with React Native - Part 2: Two-player mode](https://pusher.com/tutorials/pokemon-react-native-part-2)
+- [Create a Pokemon battle game with React Native - Part 3: Animations and sounds](https://pusher.com/tutorials/pokemon-react-native-part-3)
+
 ### Prerequisites
 
 - React Native development environment or [Expo](https://expo.io/)
